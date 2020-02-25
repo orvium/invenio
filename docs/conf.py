@@ -52,7 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Invenio'
-copyright = u'2015, CERN'
+copyright = u'2015-2019, CERN'
 author = u'CERN'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -320,17 +320,43 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/2.7/', None),
-    'flaskregistry': ('https://flask-registry.readthedocs.io/en/latest/',
-                      None),
-    'werkzeug': ('http://werkzeug.pocoo.org/docs/', None),
-    'flask': ('http://flask.pocoo.org/docs/', None),
+    'flask': ('https://flask.palletsprojects.com/en/1.1.x/', None),
     'flaskassets': ('https://flask-assets.readthedocs.io/en/latest/', None),
+    'flaskregistry': (
+        'https://flask-registry.readthedocs.io/en/latest/', None),
     'flaskscript': ('https://flask-script.readthedocs.io/en/latest/', None),
+    'invenio-app': (
+        'https://invenio-app.readthedocs.io/en/latest/', None),
+    'invenio-access': (
+        'https://invenio-access.readthedocs.io/en/latest/', None),
+    'invenio-celery': (
+        'https://invenio-celery.readthedocs.io/en/latest/', None),
+    'invenio-config': (
+        'https://invenio-config.readthedocs.io/en/latest/', None),
+    'invenio-db': (
+        'https://invenio-db.readthedocs.io/en/latest/', None),
+    'invenio-formatter': (
+        'https://invenio-formatter.readthedocs.io/en/latest/', None),
+    'invenio-indexer': (
+        'https://invenio-indexer.readthedocs.io/en/latest/', None),
+    'invenio-files-rest': (
+        'https://invenio-files-rest.readthedocs.io/en/latest/', None),
+    'invenio-previewer': (
+        'https://invenio-previewer.readthedocs.io/en/latest/', None),
+    'invenio-iiif': (
+        'https://invenio-iiif.readthedocs.io/en/latest/', None),
+    'invenio-records-files': (
+        'https://invenio-records-files.readthedocs.io/en/latest/', None),
+    'invenio-records-rest': (
+        'https://invenio-records-rest.readthedocs.io/en/latest/', None),
+    'invenio-theme': (
+        'https://invenio-theme.readthedocs.io/en/latest/', None),
+    'jinja': ('https://jinja.palletsprojects.com/en/2.10.x/', None),
+    'python': ('https://docs.python.org/', None),
     'sqlalchemy': ('http://docs.sqlalchemy.org/en/latest/', None),
-    'jinja': ('http://jinja.pocoo.org/docs/', None),
     'webassets': ('https://webassets.readthedocs.io/en/latest/', None),
+    'werkzeug': ('https://werkzeug.palletsprojects.com/en/0.16.x/', None),
 }
 
-# Autodoc configuraton.
+# Autodoc configuration.
 autoclass_content = 'both'

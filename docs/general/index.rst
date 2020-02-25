@@ -5,14 +5,13 @@
     Invenio is free software; you can redistribute it and/or modify it
     under the terms of the MIT License; see LICENSE file for more details.
 
-.. _quickstart:
-
-Quickstart
+Overview
 ==========
 
 .. toctree::
    :maxdepth: 2
 
-   quickstart
-   crud-operations
-   final-steps
+   introduction.rst
+   bundles.rst
+   requirements.rst
+   getting-help.rst

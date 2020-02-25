@@ -1,26 +1,35 @@
 ..
     This file is part of Invenio.
-    Copyright (C) 2017-2018 CERN.
+    Copyright (C) 2018 CERN.
 
     Invenio is free software; you can redistribute it and/or modify it
     under the terms of the MIT License; see LICENSE file for more details.
 
-.. _develop:
+.. _developing-with-invenio:
+
+Developing with Invenio
+=======================
+
+As described in the previous section :ref:`build-a-module`, Invenio has a modular design.
+Therefore in order to extend the application, we need to develop new modules.
+After covering how to create modules with cookiecutter, in this section we will go through
+the details of the development process.
+
 
 Form, views and templates
-=========================
+-------------------------
 In this tutorial we'll see how to add data to our Invenio application.
 To accomplish this we will cover several parts of the development process such as:
 
-- How to create a form
-- How to create a new view
-- How to add a utility function
-- How to add new templates
-- How to use Jinja2
-- How to define your own JSON Schema
+- How to create a form.
+- How to create a new view.
+- How to add a utility function.
+- How to add new templates.
+- How to use Jinja2.
+- How to define your own JSON Schema.
 
 Flask extensions
-^^^^^^^^^^^^^^^^
+++++++++++++++++
 It is important to understand that Invenio modules are just regular
 `Flask extensions
 <http://flask.pocoo.org/docs/1.0/extensiondev/#extension-dev>`_. The Flask
@@ -29,12 +38,12 @@ and in general how to develop with Flask, and it is highly recommended that you
 follow Flask tutorials to understand the basics of Flask.
 
 1. Create the form
-^^^^^^^^^^^^^^^^^^
+++++++++++++++++++
 First, let's create a Python module that contains the forms of our project, we
 will use `Flask-WTF <http://flask-wtf.readthedocs.io/en/stable/>`_.
 
 
-In ``invenio_unicorn/forms.py``
+In ``invenio_foo/forms.py``
 
 .. code-block:: python
 
@@ -57,9 +66,9 @@ In ``invenio_unicorn/forms.py``
         )
 
 2. Create the views
-^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++
 
-In ``invenio_unicorn/views.py`` we'll create the endpoints for
+In ``invenio_foo/views.py`` we'll create the endpoints for
 
 - ``create``: Form template
 - ``success``: Success template
@@ -81,7 +90,7 @@ and register all the views to our application.
     from .utils import create_record
 
     blueprint = Blueprint(
-        'invenio_unicorn',
+        'invenio_foo',
         __name__,
         template_folder='templates',
         static_folder='static',
@@ -92,8 +101,8 @@ and register all the views to our application.
     def index():
         """Basic view."""
         return render_template(
-            "invenio_unicorn/index.html",
-            module_name=_('Invenio-Unicorn'))
+            "invenio_foo/index.html",
+            module_name=_('invenio-foo'))
 
 
     @blueprint.route('/create', methods=['GET', 'POST'])
@@ -110,10 +119,10 @@ and register all the views to our application.
                 )
             )
             # redirect to the success page
-            return redirect(url_for('invenio_unicorn.success'))
+            return redirect(url_for('invenio_foo.success'))
 
         records = _get_all()
-        return render_template('invenio_unicorn/create.html', form=form, records=records)
+        return render_template('invenio_foo/create.html', form=form, records=records)
 
 
     def _get_all():
@@ -124,20 +133,20 @@ and register all the views to our application.
     @blueprint.route("/success")
     def success():
         """The success view."""
-        return render_template('invenio_unicorn/success.html')
+        return render_template('invenio_foo/success.html')
 
 
 3. Create the templates
-^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++
 
 And now, let's create the templates.
 
-We create a `create.html` template in ``invenio_unicorn/templates/invenio_unicorn/``
+We create a ``create.html`` template in ``invenio_foo/templates/invenio_foo/``
 where we can override the ``page_body`` block, to place our form:
 
 .. code-block:: html
 
-    {% extends config.UNICORN_BASE_TEMPLATE %}
+    {% extends config.FOO_BASE_TEMPLATE %}
 
     {% macro errors(field) %}
       {% if field.errors %}
@@ -161,7 +170,7 @@ where we can override the ``page_body`` block, to place our form:
             <h2>Create record</h2>
           </div>
           <div class="col-md-offset-3 col-md-6 well">
-            <form action="{{ url_for('invenio_unicorn.create') }}" method="POST">
+            <form action="{{ url_for('invenio_foo.create') }}" method="POST">
                 <div class="form-group {{ 'has-error' if form.title.errors }}">
                   <label for="title">{{ form.title.label }}</label>
                   {{ form.title(class_="form-control")|safe }}
@@ -193,13 +202,13 @@ where we can override the ``page_body`` block, to place our form:
       </div>
     {% endblock page_body %}
 
-And finally, the `success.html` page in
-`invenio_unicorn/templates/invenio_unicorn/` which will be rendered after a
+And finally, the ``success.html`` page in
+`invenio_foo/templates/invenio_foo/` which will be rendered after a
 record is created.
 
 .. code-block:: html
 
-    {% extends config.UNICORN_BASE_TEMPLATE %}
+    {% extends config.FOO_BASE_TEMPLATE %}
 
     {% block page_body %}
       <div class="container">
@@ -208,7 +217,7 @@ record is created.
             <div class="alert alert-success">
               <b>Success!</b>
             </div>
-            <a href="{{ url_for('invenio_unicorn.create') }}" class="btn btn-warning">Create more</a>
+            <a href="{{ url_for('invenio_foo.create') }}" class="btn btn-warning">Create more</a>
             <hr />
             <center>
               <iframe src="//giphy.com/embed/WZmgVLMt7mp44" width="480" height="480" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="http://giphy.com/gifs/kawaii-colorful-unicorn-WZmgVLMt7mp44">via GIPHY</a></p>
@@ -218,13 +227,13 @@ record is created.
       </div>
     {% endblock page_body %}
 
-4. Create the record creation function
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+4. Write the record creation function
++++++++++++++++++++++++++++++++++++++
 
 The ``utils.py`` file contains all helper functions of our module,
 so let's write the first utility that will create a record.
 
-In ``invenio_unicorn/utils.py``
+In ``invenio_foo/utils.py``
 
 .. code-block:: python
 
@@ -264,14 +273,14 @@ In ``invenio_unicorn/utils.py``
         indexer.index(created_record)
 
 5. Create the custom-record JSON Schema
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++++++++++++++++++
 
-As you can see, our records use a custom schema. To define and use this schema,
-we need to write the ``custom-record-v1.0.0.json`` inside the ``records``
+Our records can use a custom schema. To define and use this schema,
+we create the ``custom-record-v1.0.0.json`` file inside the ``records``
 folder of your data model project (``my-datamodel`` from the Quickstart
-tutorial :ref:`customize`).
+tutorial :ref:`understanding-data-models`).
 
-In ``my-datamodel/my-datamodel/jsonschemas/records/custom-record-v1.0.0.json``
+In ``my-datamodel/my-datamodel/jsonschemas/records/custom-record-v1.0.0.json``:
 
 .. code-block:: json
 
@@ -305,27 +314,30 @@ In ``my-datamodel/my-datamodel/jsonschemas/records/custom-record-v1.0.0.json``
 Demo time
 ---------
 
-Let's now see our Invenio module in action when integrated with our Invenio
-instance.
+Let's now see our Invenio module in action after it has been integrated in our
+Invenio instance.
 
-First we install our new Invenio-Unicorn module. For the purposes of this guide,
-our instance folder is `my-site`, and it's placed in the same root folder as
-`invenio-unicorn`.
+First, install the new invenio-foo module in the virtual enviroment of the
+Invenio instance:
 
 .. code-block:: console
 
-    $ workon my-repository-venv
-    (my-repository-venv)$ pip install --editable .[all]
+    $ pipenv shell  # activate the app virtual env
+    (my-site) $ cd ../invenio-foo
+    (my-site) $ pip install --editable .
 
-Then, if you've followed the steps in the Quickstart guide, you can go to the
-instance folder, `my-repository`, and start the ``server`` script:
+Then, if you've followed the steps in the :ref:`quickstart` guide, you can go to the
+instance folder, `my-site`, and start the ``server`` script:
 
-    (my-repository-venv)$ cd ../my-site
-    (my-repository-venv)$ ./scripts/server
+.. code-block:: console
+
+    (my-site) $ cd ../my-site
+    (my-site) $ ./scripts/server
 
 Then go to ``http://localhost:5000/create`` and you will see the form we just
 created. There are two fields ``Title`` and ``Description``.
 
-Let's try the form, add something to the ``Title`` and click submit, you will
-see the validation errors on the form, fill in the ``Description`` and click
-submit. The form is now valid and it navigates you to the ``/success`` page.
+Let's try the form. Add something in the ``Title`` field and click on submit:
+you will see a validation error on the form. Fill in the ``Description``
+field and click on submit: the form is now valid and it navigates you to the
+``/success`` page.

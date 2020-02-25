@@ -5,8 +5,10 @@
     Invenio is free software; you can redistribute it and/or modify it
     under the terms of the MIT License; see LICENSE file for more details.
 
-Build a data model
-==================
+.. _understanding-data-models:
+
+Understanding data models
+=========================
 An Invenio data model, a bit simply put, defines *a record type*. You can also
 think of a data model as a supercharged database table.
 
@@ -42,30 +44,42 @@ scaffolded data model package:
     |-- ...
     |-- docs
     |   |-- ...
-    |-- my_datamodel
+    |-- my_site
     |   |-- config.py
-    |   |-- jsonschemas/
-    |   |-- loaders/
-    |   |-- mappings/
-    |   |-- marshmallow/
-    |   |-- serializers/
-    |   |-- static/
-    |   |-- templates/
+    |   |-- records
+    |   |   |-- jsonschemas/
+    |   |   |-- loaders/
+    |   |   |-- mappings/
+    |   |   |-- marshmallow/
+    |   |   |-- serializers/
+    |   |   |-- static/
+    |   |   |-- templates/
+    |   |   `-- ...
     |   `-- ...
     |-- setup.py
     `-- tests
         |-- ...
 
+
+**Steps**
+
 Building a data model involves the following tasks:
 
-- Define a JSONSchema.
-- Define an Elasticsearch mapping.
-- Define a Marshmallow schema.
-- Define serializers.
-- Define loaders.
-- Define templates.
-- Choose a persistent identifier scheme.
-- Configure the REST API and UI.
+- Internal representation
+    - :ref:`models-jsonschema` -- used to validate the internal
+      structure of your record.
+    - :ref:`models-mapping` --  used to specify how your
+      records are indexed by the search engine.
+- External representation
+    - :ref:`models-serializers` -- transform an *internal* representation to an external (e.g. JSON to DataCite XML).
+    - :ref:`models-loaders` -- transform and validates an *external* representation to an internal (e.g. DataCite XML to JSON).
+    - :ref:`models-marshmallow` -- used to build loaders and serializers.
+- Exposing records via the UI and REST API
+    - :ref:`models-templates` -- used to render search results and landing pages.
+    - :ref:`models-ui` -- enables HTML landing pages for your records.
+    - :ref:`models-rest` -- enables the REST API for your records.
+
+.. _models-jsonschema:
 
 Define a JSONSchema
 -------------------
@@ -77,11 +91,12 @@ that you can use to get a feeling of what a JSONSchema looks like.
 
 .. code-block:: shell
 
-    |-- my_datamodel
-    |   |-- jsonschemas
-    |   |   |-- __init__.py
-    |   |   `-- records
-    |   |       `-- record-v1.0.0.json
+    |-- my_site
+    |   |-- records
+    |   |   |-- jsonschemas
+    |   |   |   |-- __init__.py
+    |   |   |   `-- records
+    |   |   |       `-- record-v1.0.0.json
 
 
 In ``record-v1.0.0.json`` you should see something like:
@@ -137,6 +152,8 @@ group ``invenio_jsonschemas.schemas``:
     A typical mistake is to forget to add a blank ``__init__.py`` file inside
     the ``jsonschemas`` folder, in which case the entry point won't work.
 
+.. _models-mapping:
+
 Define an Elasticsearch mapping
 -------------------------------
 In order to make records searchable, the records need to be indexed in
@@ -149,42 +166,41 @@ mapping
 
 .. code-block:: shell
 
-    |-- my_datamodel
-    |   |-- mappings
-    |   |   |-- __init__.py
-    |   |   |-- v5
+    |-- my_site
+    |   |-- records
+    |   |   |-- mappings
     |   |   |   |-- __init__.py
-    |   |   |   `-- records
-    |   |   |       `-- record-v1.0.0.json
-    |   |   `-- v6
-    |   |       |-- __init__.py
-    |   |       `-- records
-    |   |           `-- record-v1.0.0.json
+    |   |   |   |-- v6
+    |   |   |   |   |-- __init__.py
+    |   |   |   |   `-- records
+    |   |   |   |       `-- record-v1.0.0.json
+    |   |   |   `-- v7
+    |   |   |       |-- __init__.py
+    |   |   |       `-- records
+    |   |   |           `-- record-v1.0.0.json
 
 Note, you need an Elasticsearch mapping per major version of Elasticsearch
 you want to support.
 
-In ``record-v1.0.0.json`` you should see something like:
+In ``record-v1.0.0.json`` (for Elasticsearch 7) you should see something like:
 
 .. code-block:: json
 
     {
         "mappings": {
-            "record-v1.0.0": {
-                "date_detection": false,
-                "numeric_detection": false,
-                "properties": {
-                    "$schema": {
-                        "type": "text",
-                        "index": false
-                    },
-                    "title": {
-                        "type": "text",
-                    },
-                    "keywords": {
-                        "type": "keyword"
-                    },
-                }
+            "date_detection": false,
+            "numeric_detection": false,
+            "properties": {
+                "$schema": {
+                    "type": "text",
+                    "index": false
+                },
+                "title": {
+                    "type": "text",
+                },
+                "keywords": {
+                    "type": "keyword"
+                },
             }
         }
     }
@@ -194,30 +210,32 @@ structure of the JSON, but also how it should be indexed.
 
 For instance, in the above example the ``title`` field is of type ``text``,
 which applies stemming when searching, whereas the ``keywords`` field is of
-type ``keyword``, which means no stemming is applied. The mapping also allows
-you to define e.g. that a ``lat`` and a ``lon`` field are in fact geographical
-coordinates, and enable geospatial queries over your records.
+type ``keyword``, which means no stemming is applied, therefore, this field
+is searched based on exact match. The mapping also allows you to define e.g.
+that a ``lat`` and a ``lon`` field are in fact geographical coordinates, and
+enable geospatial queries over your records.
 
 .. _naming-schemas-mappings:
 
 Naming JSONSchemas and mappings
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 You may already have noticed that both JSONSchemas and Elasticsearch mappings
 are using the same folder structure and naming scheme:
 
 .. code-block:: shell
 
-    |-- my_datamodel
-    |   |-- jsonschemas
-    |   |   |-- __init__.py
-    |   |   `-- records
-    |   |       `-- record-v1.0.0.json
-    |   |-- mappings
-    |   |   |-- __init__.py
-    |   |   `-- v6
-    |   |       |-- __init__.py
-    |   |       `-- records
-    |   |           `-- record-v1.0.0.json
+    |-- my_site
+    |   |-- records
+    |   |   |-- jsonschemas
+    |   |   |   |-- __init__.py
+    |   |   |   `-- records
+    |   |   |       `-- record-v1.0.0.json
+    |   |   |-- mappings
+    |   |   |   |-- __init__.py
+    |   |   |   `-- v7
+    |   |   |       |-- __init__.py
+    |   |   |       `-- records
+    |   |   |           `-- record-v1.0.0.json
 
 
 The naming scheme is very important for three reasons:
@@ -250,19 +268,20 @@ way, you create a new JSONSchema and new mappings (e.g. ``record-v1.1.0.json``)
 
 .. code-block:: shell
 
-    |-- my_datamodel
-    |   |-- jsonschemas
-    |   |   |-- __init__.py
-    |   |   `-- records
-    |   |       `-- record-v1.0.0.json
-    |   |       `-- record-v1.1.0.json
-    |   |-- mappings
-    |   |   |-- __init__.py
-    |   |   `-- v6
-    |   |       |-- __init__.py
-    |   |       `-- records
-    |   |           `-- record-v1.0.0.json
-    |   |           `-- record-v1.1.0.json
+    |-- my_site
+    |   |-- records
+    |   |   |-- jsonschemas
+    |   |   |   |-- __init__.py
+    |   |   |   `-- records
+    |   |   |       `-- record-v1.0.0.json
+    |   |   |       `-- record-v1.1.0.json
+    |   |   |-- mappings
+    |   |   |   |-- __init__.py
+    |   |   |   `-- v7
+    |   |   |       |-- __init__.py
+    |   |   |       `-- records
+    |   |   |           `-- record-v1.0.0.json
+    |   |   |           `-- record-v1.1.0.json
 
 
 This allows you to simultaneously store old and new records - i.e. you don't
@@ -301,8 +320,10 @@ Note, that the left-hand-side of the entry point,
 .. note::
 
     A typical mistake is to forget to add a blank ``__init__.py`` file inside
-    the ``mappings``, ``v5`` and ``v6`` folders, in which case the entry points
+    the ``mappings``, ``v6`` and ``v7`` folders, in which case the entry points
     won't be correctly discovered.
+
+.. _models-marshmallow:
 
 Define a Marshmallow schema
 ---------------------------
@@ -321,10 +342,11 @@ serialization and deserialization needs.
 
 .. code-block:: shell
 
-    |-- my_datamodel
-    |   |-- marshmallow
-    |   |   |-- __init__.py
-    |   |   `-- json.py
+    |-- my_site
+    |   |-- records
+    |    |   |-- marshmallow
+    |    |   |   |-- __init__.py
+    |    |   |   `-- json.py
 
 Below is a simplified example of a Marshmallow schema you could use in
 ``json.py`` (note, the scaffolded data model package, includes a more complete
@@ -360,6 +382,8 @@ schemas. There's however good reasons:
   transformation for both serialization and deserialization (think of it as
   form validation).
 
+.. _models-serializers:
+
 Define serializers
 ------------------
 Think of serializers as the definition of your output formats for records. The
@@ -370,9 +394,10 @@ Serializers are defined in the ``serializers`` module:
 
 .. code-block:: shell
 
-    |-- my_datamodel
-    |   |-- serializers
-    |   |   `-- __init__.py
+    |-- my_site
+    |   |-- records
+    |   |   |-- serializers
+    |   |   |   `-- __init__.py
 
 By default, Invenio provides serializers that can help you serialize your
 internal record into common formats such as JSON-LD, Dublin Core, DataCite,
@@ -418,6 +443,8 @@ can also add HTTP headers (e.g. Link headers).
 You can see examples of the output from the two response serializers in
 the Quickstart section: :ref:`display-a-record` and :ref:`search-for-records`.
 
+.. _models-loaders:
+
 Define loaders
 --------------
 Think of loaders as the definition of your input formats for records. You only
@@ -430,9 +457,10 @@ Loaders are defined in the ``loaders`` module:
 
 .. code-block:: shell
 
-    |-- my_datamodel
-    |   |-- loaders
-    |   |   `-- __init__.py
+    |-- my_site
+    |   |-- records
+    |    |   |-- loaders
+    |    |   |   `-- __init__.py
 
 Loaders are defined in much the same way as serializers, and similarly you can
 use the Marshmallow schemas:
@@ -447,6 +475,8 @@ use the Marshmallow schemas:
 
 Note, that you are not required to use Marshmallow for deserialization, but it
 allows you to use advanced data validation rules on your REST API.
+
+.. _models-templates:
 
 Define templates
 ----------------
@@ -464,14 +494,15 @@ The templates are stored in two different folders (``static`` and
 
 .. code-block:: shell
 
-    |-- my_datamodel
-    |   |-- static
-    |   |   `-- templates
-    |   |       `-- my_datamodel
-    |   |           `-- results.html
-    |   |-- templates
-    |   |   `-- my_datamodel
-    |   |       `-- record.html
+    |-- my_site
+    |   |-- records
+    |   |   |-- static
+    |   |   |   `-- templates
+    |   |   |       `-- my_datamodel
+    |   |   |           `-- results.html
+    |   |   |-- templates
+    |   |   |   `-- my_datamodel
+    |   |   |       `-- record.html
 
 
 **Search result template**
@@ -495,17 +526,30 @@ The landing page template is by default (it's configurable) located in
 ``templates/my_datamodel/record.html`` and is using the Jinja template
 syntax.
 
+.. _models-ui:
+
 Configure the UI
 ----------------
 Last step after having defined all the different schemas, serializers, loaders
 and templates is to configure your REST API and landing pages for your records.
 
-This is all done from the ``config.py``:
+This is all done from the data model's ``config.py``:
 
 .. code-block:: shell
 
-    |-- my_datamodel
-    |   |-- config.py
+    |-- my_site
+    |   |-- records
+    |   |   |-- config.py
+
+.. note::
+
+    Take care, not to confuse ``my_site/records/config.py`` (the data model's
+    module configuration) with ``my_site/config.py`` (your application's
+    configuration).
+
+    To avoid the application configuration file from growing very big, we
+    usually keep the **default** configuration for a module in a ``config.py``
+    inside the module.
 
 **Landing page**
 
@@ -530,6 +574,8 @@ Here an explanation of the different keys:
 * ``template``: Template to use when rendering the landing page.
 * ``recid``: Unique name of the endpoint. If this is the primary landing page,
   it must be named the same as the value of ``pid_type`` (i.e. ``recid``).
+
+.. _models-rest:
 
 Configure the REST API
 ----------------------
